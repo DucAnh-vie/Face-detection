@@ -48,7 +48,7 @@ tailstr = '''\
 
 classes = ["face"]
 
-sets = ['train', 'val']
+sets = ['train', 'val'] #Train: 12876, Val: 3226
 
 
 def writexml(idx, head, bbxes, tail):
