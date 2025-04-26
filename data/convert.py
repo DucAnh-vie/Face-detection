@@ -139,6 +139,27 @@ def convert_annotation(image_id):
         out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
 
 
+def create_yaml_file():
+    # Dynamically determine the base path
+    base_path = os.getcwd().replace("\\", "/")
+
+    yaml_content = f"""\
+# Train/val/test set as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: '{base_path}' # dataset root dir
+train: images #train images (relative to 'path')
+val: images #val images (relative to 'path')
+train_label_dir: labels
+val_label_dir: labels
+# Classes
+names: 
+    - face
+"""
+    # Write the YAML content to a file
+    with open('dataset_config.yml', 'w') as yaml_file:
+        yaml_file.write(yaml_content)
+    print("YAML file 'dataset_config.yml' created successfully.")
+
+
 if __name__ == '__main__':
     # First part from convert.py
     print("Starting conversion process...")
@@ -157,4 +178,7 @@ if __name__ == '__main__':
             list_file.write(line.replace("\\", '/'))
             convert_annotation(image_id)
         list_file.close()
+
+    create_yaml_file()
+
     print("All processing completed...")
