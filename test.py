@@ -1,44 +1,41 @@
 import argparse
 import os
 import time
-import numpy as np
 from ultralytics import YOLO
 
 def main(args):
     # Load model
     model = YOLO(args.model_path)
 
-    # Get image paths
-    image_paths = [os.path.join(args.image_folder, f) for f in os.listdir(args.image_folder)
-                   if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
+    # Warm-up (1 ảnh giả)
+    model.predict(source=os.path.join(args.image_folder, os.listdir(args.image_folder)[0]),
+                  imgsz=args.imgsz, conf=args.conf, verbose=False)
 
-    total_time = 0
-    num_images = len(image_paths)
-    print(f"\n=== Detect với threshold {args.conf:.2f} ===")
+    # Bắt đầu đo thời gian batch
+    print(f"\n=== Detect batch với threshold {args.conf:.2f} ===")
+    start = time.time()
 
-    for image_path in image_paths:
-        start = time.time()
-        results = model.predict(source=image_path, save=False, conf=args.conf, imgsz=args.imgsz, verbose=False)
-        end = time.time()
+    # Predict nguyên folder
+    results = model.predict(source=args.image_folder,
+                            imgsz=args.imgsz,
+                            conf=args.conf,
+                            save=False,
+                            verbose=False)
 
-        elapsed = end - start
-        total_time += elapsed
+    end = time.time()
 
-        num_objects = len(results[0].boxes)
-        print(f"{os.path.basename(image_path)}: {num_objects} objects detected in {elapsed:.3f} seconds")
+    # Thống kê
+    total_time = end - start
+    num_images = len(results)
+    avg_time = total_time / num_images if num_images > 0 else 0
 
-    # Statistics
-    if num_images > 0:
-        avg_time = total_time / num_images
-        print(f"\nProcessed {num_images} images.")
-        print(f"Total time: {total_time:.3f} seconds")
-        print(f"Average inference time per image: {avg_time:.3f} seconds")
-    else:
-        print("No images found.")
+    print(f"Processed {num_images} images.")
+    print(f"Total time: {total_time:.3f} seconds")
+    print(f"Average inference time per image: {avg_time:.3f} seconds")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="YOLO Custom Detection Script")
-    parser.add_argument("--model_path", type=str, required=True, help="Path to custom YOLO model")
+    parser = argparse.ArgumentParser(description="YOLO Batch Detection Script with Warm-up")
+    parser.add_argument("--model_path", type=str, required=True, help="Path to YOLO model .pt file")
     parser.add_argument("--image_folder", type=str, required=True, help="Folder containing test images")
     parser.add_argument("--conf", type=float, default=0.5, help="Confidence threshold")
     parser.add_argument("--imgsz", type=int, default=640, help="Inference image size")
