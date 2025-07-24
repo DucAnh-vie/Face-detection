@@ -8,28 +8,34 @@ def main(args):
     model = YOLO(args.model_path)
 
     # Warm-up (1 ảnh giả)
-    model.predict(source=os.path.join(args.image_folder, os.listdir(args.image_folder)[0]),
-                  imgsz=args.imgsz, conf=args.conf, verbose=False)
+    first_image = os.path.join(args.image_folder, os.listdir(args.image_folder)[0])
+    model.predict(source=first_image, imgsz=args.imgsz, conf=args.conf, verbose=False)
 
-    # Bắt đầu đo thời gian batch
     print(f"\n=== Detect batch với threshold {args.conf:.2f} ===")
     start = time.time()
 
-    # Predict nguyên folder
-    results = model.predict(source=args.image_folder,
-                            imgsz=args.imgsz,
-                            conf=args.conf,
-                            save=False,
-                            verbose=False)
+    # Predict với stream=True để tránh tích tụ RAM
+    results = model.predict(
+        source=args.image_folder,
+        imgsz=args.imgsz,
+        conf=args.conf,
+        save=False,
+        stream=True,       # tránh dồn kết quả vào RAM
+        verbose=False
+    )
+
+    # Duyệt qua từng ảnh để đếm số lượng kết quả
+    count = 0
+    for _ in results:
+        count += 1
 
     end = time.time()
 
     # Thống kê
     total_time = end - start
-    num_images = len(results)
-    avg_time = total_time / num_images if num_images > 0 else 0
+    avg_time = total_time / count if count > 0 else 0
 
-    print(f"Processed {num_images} images.")
+    print(f"Processed {count} images.")
     print(f"Total time: {total_time:.3f} seconds")
     print(f"Average inference time per image: {avg_time:.3f} seconds")
 
